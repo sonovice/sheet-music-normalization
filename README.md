@@ -1,5 +1,5 @@
-# sheet-music-normalization
-Correction of rotation and scaling of sheet music images.
+# Sheet Music Normalization
+This script removes global rotation in sheet music images and tries to scale them to a given musical size by looking at the space between staff lines. Output is always in grayscale.
 
 ## Quick Start
 Clone this repository and make sure that all dependencies listed in `requirements.txt` are installed, e.g. using pip:
