@@ -8,7 +8,7 @@ $ git clone https://github.com/sonovice/sheet-music-normalization.git
 $ cd sheet-music-normalization
 $ pip install -r requirements.txt
 ```
-Perform Perform normalization on a bunch of png files in a folder:
+Perform normalization on a bunch of png files in a folder:
 ```bash
 $ python normalize.py /folder/with/images --dst normalized --db stats.sqlite
 ```
