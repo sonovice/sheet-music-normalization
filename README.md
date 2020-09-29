@@ -13,4 +13,23 @@ Perform normalization on a bunch of png files in a folder:
 $ python normalize.py /folder/with/images --dst normalized --db stats.sqlite
 ```
 
-Check `python normalize.py -h` for more parameters.
+Check `python normalize.py -h` for more parameters:
+```
+usage: normalize.py [-h] [--dst DST] [--db DB] [--staff-height STAFF_HEIGHT]
+                    [--prefix PREFIX] [--num NUM] [--seed SEED]
+                    src
+
+Normalize sheet music images.
+
+positional arguments:
+  src                          path to root directory with source images
+
+optional arguments:
+  -h, --help                   show this help message and exit
+  --dst DST                    path to root directory for result images
+  --db DB                      path to sqlite database for results
+  --staff-height STAFF_HEIGHT  target pixel height of staves
+  --prefix PREFIX              prefix to be used in result image filenames
+  --num NUM                    number of images to sample
+  --seed SEED                  seed value for random sampling
+```
