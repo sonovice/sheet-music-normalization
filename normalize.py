@@ -1,3 +1,16 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+
+"""
+This script removes global rotation in sheet music images and tries to
+scale them to a given musical size by looking at the space between
+staff lines. Output is always in grayscale.
+
+This Source Code Form is subject to the terms of the GNU General Public
+License, v. 3.0. If a copy of the GPL was not distributed with this
+file, You can obtain one at https://www.gnu.org/licenses/gpl-3.0.html
+"""
+
 import math
 import os
 import sqlite3
@@ -204,3 +217,12 @@ if __name__ == '__main__':
                 db.commit()
 
     db.close()
+
+__author__ = "Simon Waloschek"
+__copyright__ = "Copyright 2020, Simon Waloschek"
+__credits__ = ["Simon Waloschek"]
+__license__ = "GNU GPLv3"
+__version__ = "1.0.0"
+__maintainer__ = "Simon Waloschek"
+__email__ = "simon@waloschek.me"
+__status__ = "Dev"
