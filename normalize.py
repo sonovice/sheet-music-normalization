@@ -122,8 +122,12 @@ def normalize(params):
         max_bin = np.argmax(hist)
         max_loc = bin_edges[max_bin]
 
+        # Get exact value from histogram data
+        vals_in_bin = [val for val in diff if val >= bin_edges[max_bin] and val <= bin_edges[max_bin + 1]]
+        val_mean = np.mean(vals_in_bin)
+
         # Compute scaling factor from most common interline difference
-        scale = (args.staff_height / 4) / max_loc * math.cos(math.radians(rotation))
+        scale = (args.staff_height / 4) / val_mean * math.cos(math.radians(rotation))
 
         # Compute target image size
         h, w = image.shape
