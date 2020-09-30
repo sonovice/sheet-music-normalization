@@ -23,12 +23,6 @@ from skimage.transform import hough_line, hough_line_peaks, pyramid_reduce
 from tqdm import tqdm
 
 
-def is_outlier(angles, angle, epsilon=0.4):
-    median = np.median(angles)
-    deviation = abs(angle - median)
-    return deviation > epsilon
-
-
 def normalize(params):
     src_path, args = params
 
@@ -75,20 +69,15 @@ def normalize(params):
         tested_angles = np.linspace(np.radians(85), np.radians(95), 1000)
         h, theta, d = hough_line(closed, theta=tested_angles)
 
-        # Detect peaks in Hough Transform and save angles for all detected lines
+        # Detect peaks in Hough Transform
         peaks = hough_line_peaks(h, theta, d, min_distance=6, threshold=0.65 * h.max())
-        angles = []
-        for _, angle, dist in zip(*peaks):
-            angles.append(np.degrees(angle))
+        _, angles, dists = peaks
+        angles = np.degrees(angles)
 
-        # Filter outliers in angles
-        angles = [angle for angle in angles if not is_outlier(angles, angle)]
-
-        # Get distances for all lines
-        dists = []
-        for _, angle, dist in zip(*peaks):
-            if not is_outlier(angles, np.degrees(angle)):
-                dists.append(dist)
+        # Filter out outliers
+        valid_idxs = np.where(np.abs(np.mean(angles) - angles) < 0.4)
+        angles = angles[valid_idxs]
+        dists = dists[valid_idxs]
 
         # Sort distances and compute interline differences between adjacent values
         diff = np.diff(sorted(dists))
