@@ -102,7 +102,7 @@ def normalize(params):
         val_mean = np.mean(vals_in_bin)
 
         # Compute scaling factor from most common interline difference
-        scale = pre_scale * ((args.staff_height / 4) / val_mean * math.cos(math.radians(rotation)))
+        scale = pre_scale * ((args.staff_height / 4) / val_mean)
 
         if args.skip and (scale > 7 or scale < 0.2):
             return src_path, f"Unrealistic scaling factor of {scale}."
