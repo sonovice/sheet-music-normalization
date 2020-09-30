@@ -40,7 +40,7 @@ def normalize(params):
             rel_src_dir = os.path.dirname(rel_src_path)
 
             src_filename = os.path.basename(rel_src_path)
-            basename, ext = os.path.splitext(src_filename)
+            basename, _ = os.path.splitext(src_filename)
 
             dst_dir = os.path.join(args.dst, rel_src_dir)
             os.makedirs(dst_dir, exist_ok=True)
@@ -75,7 +75,7 @@ def normalize(params):
         closed = cv2.morphologyEx(tresh, op=cv2.MORPH_CLOSE, kernel=np.ones((3, 3)))
 
         # Perform Hough Transform on closed image
-        tested_angles = np.linspace(np.radians(85), np.radians(95), 100)
+        tested_angles = np.linspace(np.radians(85), np.radians(95), 1000)
         h, theta, d = hough_line(closed, theta=tested_angles)
 
         # Detect peaks in Hough Transform and save angles for all detected lines
@@ -96,7 +96,8 @@ def normalize(params):
             if not is_outlier(angles, np.degrees(angle)):
                 y0, y1 = (dist - origin * np.cos(angle)) / np.sin(angle)
                 ys.append(y0)
-        #         plt.plot(origin, (y0, y1))
+                # plt.plot(origin, (y0, y1), 'r')
+        # plt.tight_layout()
         # plt.show()
 
         # Sort y-values and compute interline differences between adjacent values
@@ -173,7 +174,12 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     pool = Pool(os.cpu_count() - 1)
-    src_paths = sorted(glob(f"{args.src}/**/*.png", recursive=True))
+    extensions = ('jpg', 'jpeg', 'png')
+    src_paths = []
+    for ext in extensions:
+        src_paths.extend(glob(f"{args.src}/**/*.{ext}", recursive=True))
+
+    src_paths.sort()
 
     if args.db is None and args.dst is None and args.use_prefix is None:
         print("No database/result path or prefix given, exiting.", file=sys.stderr)
