@@ -152,7 +152,7 @@ def normalize(params):
         src_resolution = f"{src_w} x {src_h}"
         dst_resolution = f"{dst_w} x {dst_h}"
 
-        return src_path, src_resolution, dst_path, dst_resolution, rotation, pre_scale * scale
+        return src_path, src_resolution, dst_path, dst_resolution, rotation, scale
 
     except:
         return src_path, traceback.format_exc()
