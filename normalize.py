@@ -123,7 +123,7 @@ def normalize(params):
         # Compute scaling factor from most common interline difference
         scale = pre_scale * ((args.staff_height / 4) / val_mean * math.cos(math.radians(rotation)))
 
-        if args.skip and (scale >= 3 or scale <= 0.3):
+        if args.skip and (scale > 7 or scale < 0.2):
             return src_path, f"Unrealistic scaling factor of {scale}"
 
         # plt.title(f"{rel_src_path} @ {scale}")
