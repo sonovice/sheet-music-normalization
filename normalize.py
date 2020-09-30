@@ -64,21 +64,18 @@ def normalize(params):
         # Check if image is already b/w and threshold if not
         is_black_and_white = np.count_nonzero(image_gray == 255) + np.count_nonzero(image_gray == 0) == (image_gray.shape[0] * image_gray.shape[1])
         if not is_black_and_white:
-            #equalized = cv2.equalizeHist(image_gray)
             tresh = 255 - cv2.ximgproc.niBlackThreshold(image_gray, 255, k=0.1, blockSize=51, type=cv2.THRESH_BINARY, binarizationMethod=cv2.ximgproc.BINARIZATION_SAUVOLA)
-            # tresh = (image < 180).astype(np.uint8)
         else:
             tresh = 255 - image_gray
 
         # Preprocess image to have better lines
         closed = cv2.morphologyEx(tresh, op=cv2.MORPH_CLOSE, kernel=np.ones((3, 3)))
 
-        # Perform Hough Transform on closed image
+        # Perform Hough Transform for quasi-horizontal lines on closed image
         tested_angles = np.linspace(np.radians(85), np.radians(95), 1000)
         h, theta, d = hough_line(closed, theta=tested_angles)
 
         # Detect peaks in Hough Transform and save angles for all detected lines
-        origin = np.array((0, image_gray.shape[1]))
         peaks = hough_line_peaks(h, theta, d, min_distance=6, threshold=0.65 * h.max())
         angles = []
         for _, angle, dist in zip(*peaks):
@@ -87,19 +84,14 @@ def normalize(params):
         # Filter outliers in angles
         angles = [angle for angle in angles if not is_outlier(angles, angle)]
 
-        # Get y-values for all lines at x=0
-        ys = []
-        # import matplotlib.pyplot as plt
-        # plt.imshow(closed, cmap='Greys_r')
+        # Get distances for all lines
+        dists = []
         for _, angle, dist in zip(*peaks):
             if not is_outlier(angles, np.degrees(angle)):
-                y0, y1 = (dist - origin * np.cos(angle)) / np.sin(angle)
-                ys.append(y0)
-                # plt.plot(origin, (y0, y1), 'r')
+                dists.append(dist)
 
-        # Sort y-values and compute interline differences between adjacent values
-        ys = sorted(ys)
-        diff = np.diff(ys)
+        # Sort distances and compute interline differences between adjacent values
+        diff = np.diff(sorted(dists))
 
         if len(diff) < 5 or len(angles) < 1:
             return src_path, 'Not enough staff lines. Maybe no music?'
@@ -109,12 +101,10 @@ def normalize(params):
 
         # Get most common interline difference
         hist, bin_edges = np.histogram(diff, bins=50)
-        # plt.plot(bin_edges[1:], hist)
         max_bin = np.argmax(hist)
-        max_loc = bin_edges[max_bin]
 
         # Get exact value from histogram data
-        vals_in_bin = [val for val in diff if val >= bin_edges[max_bin] and val <= bin_edges[max_bin + 1]]
+        vals_in_bin = [val for val in diff if bin_edges[max_bin] <= val <= bin_edges[max_bin + 1]]
         val_mean = np.mean(vals_in_bin)
 
         # Compute scaling factor from most common interline difference
@@ -122,10 +112,6 @@ def normalize(params):
 
         if args.skip and (scale > 7 or scale < 0.2):
             return src_path, f"Unrealistic scaling factor of {scale}"
-
-        # plt.title(f"{rel_src_path} @ {scale}")
-        # plt.tight_layout()
-        # plt.show()
 
         # Compute target image size
         h, w = image.shape[:2]
@@ -235,4 +221,4 @@ __license__ = "GNU GPLv3"
 __version__ = "1.0.0"
 __maintainer__ = "Simon Waloschek"
 __email__ = "simon@waloschek.me"
-__status__ = "Dev"
+__status__ = "Development"
