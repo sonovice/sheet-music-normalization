@@ -42,7 +42,6 @@ def normalize(params):
             basename, _ = os.path.splitext(src_filename)
 
             dst_dir = os.path.join(args.dst, rel_src_dir)
-            os.makedirs(dst_dir, exist_ok=True)
             dst_path = os.path.join(dst_dir, f"{args.prefix}{basename}.png")
         else:
             dst_path = None
@@ -147,6 +146,7 @@ def normalize(params):
 
         # Save target image
         if args.dst is not None:
+            os.makedirs(dst_dir, exist_ok=True)
             cv2.imwrite(dst_path, scaled)
 
         src_resolution = f"{src_w} x {src_h}"
