@@ -70,9 +70,11 @@ def normalize(params):
         h, theta, d = hough_line(closed, theta=tested_angles)
 
         # Detect peaks in Hough Transform
-        peaks = hough_line_peaks(h, theta, d, min_distance=6, threshold=0.65 * h.max())
-        _, angles, dists = peaks
+        _, angles, dists = hough_line_peaks(h, theta, d, min_distance=6, threshold=0.65 * h.max())
         angles = np.degrees(angles)
+
+        if len(angles) == 0:
+            return src_path, 'Not enough staff lines. Maybe no music?'
 
         # Filter out outliers
         valid_idxs = np.where(np.abs(np.mean(angles) - angles) < 0.4)
@@ -82,7 +84,7 @@ def normalize(params):
         # Sort distances and compute interline differences between adjacent values
         diff = np.diff(sorted(dists))
 
-        if len(diff) < 5 or len(angles) < 1:
+        if len(diff) < 5 or len(angles) == 0:
             return src_path, 'Not enough staff lines. Maybe no music?'
 
         # Compute global rotation angle
