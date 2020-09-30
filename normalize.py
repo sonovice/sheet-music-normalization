@@ -89,7 +89,7 @@ def normalize(params):
 
         # Get y-values for all lines at x=0
         ys = []
-        import matplotlib.pyplot as plt
+        # import matplotlib.pyplot as plt
         # plt.imshow(closed, cmap='Greys_r')
         for _, angle, dist in zip(*peaks):
             if not is_outlier(angles, np.degrees(angle)):
@@ -101,10 +101,7 @@ def normalize(params):
         ys = sorted(ys)
         diff = np.diff(ys)
 
-        if len(diff) == 0:
-            return src_path, 'Not enough staff lines. Maybe no music?'
-
-        if len(diff) < 5:
+        if len(diff) < 5 or len(angles) < 1:
             return src_path, 'Not enough staff lines. Maybe no music?'
 
         # Compute global rotation angle
