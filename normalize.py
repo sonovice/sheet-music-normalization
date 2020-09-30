@@ -74,10 +74,13 @@ def normalize(params):
         angles = np.degrees(angles)
 
         if len(angles) == 0:
-            return src_path, 'Not enough staff lines. Maybe no music?'
+            return src_path, 'Not enough staff lines detected.'
 
         # Filter out outliers
         valid_idxs = np.where(np.abs(np.mean(angles) - angles) < 0.4)
+        if len(valid_idxs[0]) == 0:
+            return src_path, 'Not enough staff lines detected.'
+
         angles = angles[valid_idxs]
         dists = dists[valid_idxs]
 
@@ -85,7 +88,7 @@ def normalize(params):
         diff = np.diff(sorted(dists))
 
         if len(diff) < 5 or len(angles) == 0:
-            return src_path, 'Not enough staff lines. Maybe no music?'
+            return src_path, 'Not enough staff lines detected.'
 
         # Compute global rotation angle
         rotation = -90 + np.mean(angles)
@@ -102,7 +105,7 @@ def normalize(params):
         scale = pre_scale * ((args.staff_height / 4) / val_mean * math.cos(math.radians(rotation)))
 
         if args.skip and (scale > 7 or scale < 0.2):
-            return src_path, f"Unrealistic scaling factor of {scale}"
+            return src_path, f"Unrealistic scaling factor of {scale}."
 
         # Compute target image size
         h, w = image.shape[:2]
