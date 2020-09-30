@@ -2,13 +2,12 @@
 # -*- coding: utf-8 -*-
 
 """
-This script removes global rotation in sheet music images and tries to
-scale them to a given musical size by looking at the space between
-staff lines. Output is always in grayscale.
+This script removes global rotation in sheet music images and tries to scale
+them to a given musical size by looking at the space between staff lines.
 
-This Source Code Form is subject to the terms of the GNU General Public
-License, v. 3.0. If a copy of the GPL was not distributed with this
-file, You can obtain one at https://www.gnu.org/licenses/gpl-3.0.html
+This source code form is subject to the terms of the GNU General Public
+License v3.0. If a copy of the GPL was not distributed with this file, you
+can obtain one at https://www.gnu.org/licenses/gpl-3.0.html
 """
 
 import math
@@ -49,27 +48,28 @@ def normalize(params):
             dst_path = None
 
         # Read image
-        image = cv2.imread(src_path, cv2.IMREAD_GRAYSCALE)
-        src_h, src_w = image.shape
+        image = cv2.imread(src_path)
+        image_gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+        src_h, src_w = image_gray.shape[:2]
 
         # Scale up or down overly tiny or large images
-        long = max(src_h, src_w)
-        if long > 5500:
-            pre_scale = 5000 / long
-            image = pyramid_reduce(image, 1 / pre_scale, preserve_range=True).astype(np.uint8)
-        elif long < 1500:
-            pre_scale = 2000 / long
-            image = cv2.resize(image, None, fx=pre_scale, fy=pre_scale, interpolation=cv2.INTER_AREA)
+        if src_h > 5500:
+            pre_scale = 5000 / src_h
+            image_gray = pyramid_reduce(image_gray, 1 / pre_scale, preserve_range=True).astype(np.uint8)
+        elif src_h < 1500:
+            pre_scale = 2000 / src_h
+            image_gray = cv2.resize(image_gray, None, fx=pre_scale, fy=pre_scale, interpolation=cv2.INTER_LINEAR)
         else:
             pre_scale = 1
 
         # Check if image is already b/w and threshold if not
-        is_black_and_white = np.count_nonzero(image == 255) + np.count_nonzero(image == 0) == (image.shape[0] * image.shape[1])
+        is_black_and_white = np.count_nonzero(image_gray == 255) + np.count_nonzero(image_gray == 0) == (image_gray.shape[0] * image_gray.shape[1])
         if not is_black_and_white:
-            tresh = 255 - cv2.ximgproc.niBlackThreshold(image, 255, k=0.1, blockSize=51, type=cv2.THRESH_BINARY, binarizationMethod=cv2.ximgproc.BINARIZATION_SAUVOLA)
+            #equalized = cv2.equalizeHist(image_gray)
+            tresh = 255 - cv2.ximgproc.niBlackThreshold(image_gray, 255, k=0.1, blockSize=51, type=cv2.THRESH_BINARY, binarizationMethod=cv2.ximgproc.BINARIZATION_SAUVOLA)
             # tresh = (image < 180).astype(np.uint8)
         else:
-            tresh = 255 - image
+            tresh = 255 - image_gray
 
         # Preprocess image to have better lines
         closed = cv2.morphologyEx(tresh, op=cv2.MORPH_CLOSE, kernel=np.ones((3, 3)))
@@ -79,7 +79,7 @@ def normalize(params):
         h, theta, d = hough_line(closed, theta=tested_angles)
 
         # Detect peaks in Hough Transform and save angles for all detected lines
-        origin = np.array((0, image.shape[1]))
+        origin = np.array((0, image_gray.shape[1]))
         peaks = hough_line_peaks(h, theta, d, min_distance=6, threshold=0.65 * h.max())
         angles = []
         for _, angle, dist in zip(*peaks):
@@ -90,15 +90,13 @@ def normalize(params):
 
         # Get y-values for all lines at x=0
         ys = []
-        # import matplotlib.pyplot as plt
+        import matplotlib.pyplot as plt
         # plt.imshow(closed, cmap='Greys_r')
         for _, angle, dist in zip(*peaks):
             if not is_outlier(angles, np.degrees(angle)):
                 y0, y1 = (dist - origin * np.cos(angle)) / np.sin(angle)
                 ys.append(y0)
                 # plt.plot(origin, (y0, y1), 'r')
-        # plt.tight_layout()
-        # plt.show()
 
         # Sort y-values and compute interline differences between adjacent values
         ys = sorted(ys)
@@ -107,9 +105,6 @@ def normalize(params):
         if len(diff) == 0:
             return src_path, 'Not enough staff lines. Maybe no music?'
 
-        # Filter out interline differences that are bigger then the mean
-        diff_mean = np.mean(diff)
-        diff = [d for d in diff if d < diff_mean]
         if len(diff) < 5:
             return src_path, 'Not enough staff lines. Maybe no music?'
 
@@ -119,7 +114,6 @@ def normalize(params):
         # Get most common interline difference
         hist, bin_edges = np.histogram(diff, bins=50)
         # plt.plot(bin_edges[1:], hist)
-        # plt.show()
         max_bin = np.argmax(hist)
         max_loc = bin_edges[max_bin]
 
@@ -128,20 +122,28 @@ def normalize(params):
         val_mean = np.mean(vals_in_bin)
 
         # Compute scaling factor from most common interline difference
-        scale = (args.staff_height / 4) / val_mean * math.cos(math.radians(rotation))
+        scale = pre_scale * ((args.staff_height / 4) / val_mean * math.cos(math.radians(rotation)))
+
+        if args.skip and (scale >= 3 or scale <= 0.3):
+            return src_path, f"Unrealistic scaling factor of {scale}"
+
+        # plt.title(f"{rel_src_path} @ {scale}")
+        # plt.tight_layout()
+        # plt.show()
 
         # Compute target image size
-        h, w = image.shape
+        h, w = image.shape[:2]
         dst_w = int(w * scale)
         dst_h = int(h * scale)
 
         # Do image transformation
         M = cv2.getRotationMatrix2D((0, 0), rotation, 1)
-        rotated = cv2.warpAffine(image, M, (w, h), borderValue=255)
+        rotated = cv2.warpAffine(image, M, (w, h), borderMode=cv2.BORDER_REFLECT)
         if scale >= 1:
-            scaled = cv2.resize(rotated, (dst_w, dst_h), scale, interpolation=cv2.INTER_AREA)
+            scaled = cv2.resize(rotated, (dst_w, dst_h), scale, interpolation=cv2.INTER_CUBIC)
         else:
-            scaled = pyramid_reduce(rotated, 1 / scale, preserve_range=True).astype(np.uint8)
+            is_multichannel = len(rotated.shape) > 2
+            scaled = pyramid_reduce(rotated, 1 / scale, preserve_range=True, multichannel=is_multichannel).astype(np.uint8)
 
         # Save target image
         if args.dst is not None:
@@ -170,6 +172,7 @@ if __name__ == '__main__':
     parser.add_argument('--prefix', type=str, default='', help='prefix to be used in result image filenames')
     parser.add_argument('--num', type=int, default=None, help='number of images to sample')
     parser.add_argument('--seed', type=int, default=42, help='seed value for random sampling')
+    parser.add_argument('--skip', action='store_true', default=False, help='skip images with unrealistic scaling estimates')
 
     args = parser.parse_args()
 
@@ -210,7 +213,7 @@ if __name__ == '__main__':
 
     params = [(sp, args) for sp in src_paths]
 
-    for results in tqdm(pool.imap_unordered(normalize, params), total=len(params), smoothing=0.005):
+    for results in tqdm(pool.imap_unordered(normalize, params), total=len(params), smoothing=0.1):
         if results is None:
             continue
 

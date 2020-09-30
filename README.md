@@ -1,5 +1,5 @@
 # Sheet Music Normalization
-This script removes global rotation in (scanned) sheet music images and tries to scale them to a given musical size by looking at the space between staff lines. Output is always in grayscale.
+This script removes global rotation in (scanned) sheet music images and tries to scale them to a given "musical size" by looking at the space between staff lines.
 
 ## Quick Start
 Clone this repository and make sure that all dependencies listed in `requirements.txt` are installed, e.g. using pip:
@@ -13,12 +13,13 @@ Perform normalization on a bunch of png files in a folder:
 $ python normalize.py /folder/with/images --dst normalized --db stats.sqlite
 ```
 
+Result stats (and errors) can be logged in an SQLite database for easier inspection.
+
 ## Options
 Check `python normalize.py -h` for more parameters:
 ```
 usage: normalize.py [-h] [--dst DST] [--db DB] [--staff-height STAFF_HEIGHT]
-                    [--prefix PREFIX] [--num NUM] [--seed SEED]
-                    src
+                    [--prefix PREFIX] [--num NUM] [--seed SEED] src
 
 Normalize sheet music images.
 
@@ -33,4 +34,5 @@ optional arguments:
   --prefix PREFIX              prefix to be used in result image filenames
   --num NUM                    number of images to sample
   --seed SEED                  seed value for random sampling
+  --skip                       skip images with unrealistic scaling estimates
 ```
