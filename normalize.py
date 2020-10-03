@@ -101,6 +101,9 @@ def normalize(params):
         vals_in_bin = [val for val in diff if bin_edges[max_bin] <= val <= bin_edges[max_bin + 1]]
         val_mean = np.mean(vals_in_bin)
 
+        if val_mean == 0:
+            return src_path, 'Could not recognize scale.'
+
         # Compute scaling factor from most common interline difference
         scale = pre_scale * ((args.staff_height / 4) / val_mean)
 
@@ -113,18 +116,18 @@ def normalize(params):
         dst_h = int(h * scale)
 
         # Do image transformation
-        M = cv2.getRotationMatrix2D((0, 0), rotation, 1)
-        rotated = cv2.warpAffine(image, M, (w, h), borderMode=cv2.BORDER_REFLECT)
         if scale >= 1:
-            scaled = cv2.resize(rotated, (dst_w, dst_h), scale, interpolation=cv2.INTER_CUBIC)
+            scaled = cv2.resize(image, (dst_w, dst_h), scale, interpolation=cv2.INTER_CUBIC)
         else:
-            is_multichannel = len(rotated.shape) > 2
-            scaled = pyramid_reduce(rotated, 1 / scale, preserve_range=True, multichannel=is_multichannel).astype(np.uint8)
+            is_multichannel = len(image.shape) > 2
+            scaled = pyramid_reduce(image, 1 / scale, preserve_range=True, multichannel=is_multichannel).astype(np.uint8)
+        M = cv2.getRotationMatrix2D((0, 0), rotation, 1)
+        rotated = cv2.warpAffine(scaled, M, (dst_w, dst_h), borderMode=cv2.BORDER_REFLECT)
 
         # Save target image
         if args.dst is not None:
             os.makedirs(dst_dir, exist_ok=True)
-            cv2.imwrite(dst_path, scaled)
+            cv2.imwrite(dst_path, rotated)
 
         src_resolution = f"{src_w} x {src_h}"
         dst_resolution = f"{dst_w} x {dst_h}"
