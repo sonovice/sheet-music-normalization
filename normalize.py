@@ -209,7 +209,8 @@ if __name__ == '__main__':
                 cursor.execute(f"INSERT INTO images VALUES ('{src_path}','{src_resolution}','{dst_path}','{dst_resolution}',{rotation},{scale})")
                 db.commit()
 
-    db.close()
+    if args.db is not None:
+        db.close()
 
 __author__ = "Simon Waloschek"
 __copyright__ = "Copyright 2020, Simon Waloschek"
