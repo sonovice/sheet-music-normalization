@@ -121,7 +121,7 @@ def normalize(params):
         else:
             is_multichannel = len(image.shape) > 2
             scaled = pyramid_reduce(image, 1 / scale, preserve_range=True, multichannel=is_multichannel).astype(np.uint8)
-        M = cv2.getRotationMatrix2D((0, 0), rotation, 1)
+        M = cv2.getRotationMatrix2D((dst_w // 2, dst_h // 2), rotation, 1)
         rotated = cv2.warpAffine(scaled, M, (dst_w, dst_h), borderMode=cv2.BORDER_REFLECT)
 
         # Save target image
